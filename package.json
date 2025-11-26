@@ -1,0 +1,27 @@
+{
+  "name": "calitrack-360",
+  "version": "1.0.0",
+  "description": "PWA para captura de información de proyectos de infraestructura",
+  "private": true,
+  "workspaces": [
+    "frontend"
+  ],
+  "scripts": {
+    "setup": "npm run setup:windows || npm run setup:unix",
+    "setup:windows": "powershell -ExecutionPolicy Bypass -File ./setup.ps1",
+    "setup:unix": "bash ./setup.sh",
+    "dev": "npm run dev --workspace=frontend",
+    "build": "npm run build --workspace=frontend",
+    "preview": "npm run preview --workspace=frontend",
+    "install:all": "npm install --workspace=frontend"
+  },
+  "keywords": [
+    "pwa",
+    "svelte",
+    "firebase",
+    "geolocation",
+    "camera"
+  ],
+  "author": "",
+  "license": "ISC"
+}

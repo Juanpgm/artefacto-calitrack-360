@@ -1,0 +1,6 @@
+
+# Environment files - NUNCA SUBIR
+.env.local
+.env.*.local
+**/.env.local
+**/.env.*.local
