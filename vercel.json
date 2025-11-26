@@ -1,5 +1,5 @@
 {
-  "buildCommand": "cp .env.local frontend/.env.local 2>/dev/null || true && npm run build --workspace=frontend",
+  "buildCommand": "cd frontend && npm install && npm run build",
   "installCommand": "npm install",
   "outputDirectory": "frontend/dist",
   "framework": null,
