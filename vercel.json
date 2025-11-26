@@ -1,8 +1,36 @@
 {
-  "buildCommand": "npm run build --workspace=frontend",
+  "buildCommand": "cp .env.local frontend/.env.local 2>/dev/null || true && npm run build --workspace=frontend",
   "installCommand": "npm install",
   "outputDirectory": "frontend/dist",
   "framework": null,
+  "headers": [
+    {
+      "source": "/sw.js",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "public, max-age=0, must-revalidate"
+        }
+      ]
+    },
+    {
+      "source": "/(.*)",
+      "headers": [
+        {
+          "key": "X-Content-Type-Options",
+          "value": "nosniff"
+        },
+        {
+          "key": "X-Frame-Options",
+          "value": "DENY"
+        },
+        {
+          "key": "X-XSS-Protection",
+          "value": "1; mode=block"
+        }
+      ]
+    }
+  ],
   "rewrites": [
     {
       "source": "/(.*)",
