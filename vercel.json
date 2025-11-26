@@ -1,7 +1,7 @@
 {
-  "buildCommand": "npm run build",
+  "buildCommand": "npm run build && cp -r frontend/dist dist",
   "installCommand": "npm install",
-  "outputDirectory": "frontend/dist",
+  "outputDirectory": "dist",
   "framework": null,
   "rewrites": [
     {
