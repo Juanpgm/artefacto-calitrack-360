@@ -63,7 +63,7 @@ export default defineConfig({
     // No se necesita proxy - el frontend consume directamente la API de Railway
   },
   build: {
-    outDir: process.env.VERCEL ? '../dist' : 'dist',
+    outDir: 'dist',
     emptyOutDir: true
   }
 });

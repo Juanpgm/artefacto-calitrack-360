@@ -1,7 +1,7 @@
 {
-  "buildCommand": "npm run build",
+  "buildCommand": "npm run build --workspace=frontend",
   "installCommand": "npm install",
-  "outputDirectory": "dist",
+  "outputDirectory": "frontend/dist",
   "framework": null,
   "rewrites": [
     {
