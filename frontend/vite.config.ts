@@ -61,5 +61,9 @@ export default defineConfig({
   server: {
     port: 5173
     // No se necesita proxy - el frontend consume directamente la API de Railway
+  },
+  build: {
+    outDir: process.env.VERCEL ? '../dist' : 'dist',
+    emptyOutDir: true
   }
 });

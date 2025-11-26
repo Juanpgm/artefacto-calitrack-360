@@ -1,5 +1,5 @@
 {
-  "buildCommand": "npm run build && cp -r frontend/dist dist",
+  "buildCommand": "npm run build",
   "installCommand": "npm install",
   "outputDirectory": "dist",
   "framework": null,
