@@ -1,6 +1,6 @@
 {
-  "buildCommand": "npm install --prefix frontend && npm run build --prefix frontend",
-  "installCommand": "echo 'Skipping root install'",
+  "buildCommand": "cd frontend && npm ci && npm run build",
+  "installCommand": "npm install --legacy-peer-deps || true",
   "outputDirectory": "frontend/dist",
   "framework": null,
   "headers": [
