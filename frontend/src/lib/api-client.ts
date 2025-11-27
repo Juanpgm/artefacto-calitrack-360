@@ -38,17 +38,30 @@ export class ApiClient {
    * GET request
    */
   static async get<T = any>(endpoint: string): Promise<T> {
-    const headers = await this.getHeaders();
-    const response = await fetch(`${API_BASE_URL}${endpoint}`, {
-      method: 'GET',
-      headers
-    });
+    try {
+      const headers = await this.getHeaders();
+      console.log(`[API] GET ${API_BASE_URL}${endpoint}`);
+      
+      const response = await fetch(`${API_BASE_URL}${endpoint}`, {
+        method: 'GET',
+        headers
+      });
 
-    if (!response.ok) {
-      throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+      console.log(`[API] Response status: ${response.status}`);
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error(`[API] Error response:`, errorText);
+        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+      }
+
+      const data = await response.json();
+      console.log(`[API] Response data:`, data);
+      return data;
+    } catch (error) {
+      console.error(`[API] Request failed:`, error);
+      throw error;
     }
-
-    return response.json();
   }
 
   /**
