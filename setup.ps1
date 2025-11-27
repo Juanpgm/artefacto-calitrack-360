@@ -82,15 +82,40 @@ Write-Host "========================================" -ForegroundColor Cyan
 Write-Host ""
 Write-Host "Proximos pasos:" -ForegroundColor Yellow
 Write-Host ""
-Write-Host "1. Configura las credenciales de Firebase en:" -ForegroundColor White
-Write-Host "   frontend/.env.local" -ForegroundColor Cyan
-Write-Host ""
-Write-Host "2. Inicia el servidor de desarrollo:" -ForegroundColor White
+
+# Validar si las credenciales estan configuradas correctamente
+$envContent = Get-Content "$PSScriptRoot/frontend/.env.local" -Raw -ErrorAction SilentlyContinue
+$needsConfig = $false
+
+if ($envContent -match "tu-api-key-aqui" -or $envContent -match "tu-proyecto") {
+    $needsConfig = $true
+    Write-Host "1. IMPORTANTE: Configura las credenciales de Firebase en:" -ForegroundColor Red
+    Write-Host "   frontend/.env.local" -ForegroundColor Cyan
+    Write-Host ""
+    Write-Host "   Obtener credenciales desde:" -ForegroundColor Yellow
+    Write-Host "   Firebase Console > Project Settings > Your apps > Web app" -ForegroundColor White
+    Write-Host ""
+}
+
+if ($needsConfig) {
+    Write-Host "2. Despues de configurar Firebase, inicia el servidor:" -ForegroundColor White
+} else {
+    Write-Host "1. Todo listo! Inicia el servidor de desarrollo:" -ForegroundColor Green
+}
+
 Write-Host "   cd frontend" -ForegroundColor Cyan
 Write-Host "   npm run dev" -ForegroundColor Cyan
 Write-Host ""
-Write-Host "3. Abre en tu navegador:" -ForegroundColor White
+
+if ($needsConfig) {
+    Write-Host "3. Abre en tu navegador:" -ForegroundColor White
+} else {
+    Write-Host "2. Abre en tu navegador:" -ForegroundColor White
+}
+
 Write-Host "   http://localhost:5173" -ForegroundColor Cyan
+Write-Host ""
+Write-Host "API Backend configurada: https://gestorproyectoapi-production.up.railway.app" -ForegroundColor Cyan
 Write-Host ""
 Write-Host "Para mas informacion, consulta README.md" -ForegroundColor Yellow
 Write-Host ""

@@ -56,19 +56,27 @@ artefacto-calitrack-360/
 - Git
 - Credenciales de Firebase
 
-### Instalación Automática
+### Instalación Automática (Recomendado)
 
 **Windows (PowerShell):**
 
 ```powershell
+# Instalar dependencias y configurar proyecto
 .\setup.ps1
+
+# Verificar que todo esté listo
+.\verify-setup.ps1
 ```
 
 **Linux/macOS:**
 
 ```bash
-chmod +x setup.sh
+# Instalar dependencias y configurar proyecto
+chmod +x setup.sh verify-setup.sh
 ./setup.sh
+
+# Verificar que todo esté listo
+./verify-setup.sh
 ```
 
 ### Instalación Manual
@@ -83,6 +91,12 @@ cp .env.example .env.local
 
 npm run dev
 ```
+
+### Scripts Disponibles
+
+- **`setup.ps1` / `setup.sh`**: Instala dependencias, crea archivo de configuración y verifica el entorno
+- **`verify-setup.ps1` / `verify-setup.sh`**: Verifica que todo esté correctamente configurado antes de desarrollar
+- Ejecuta `verify-setup` después de clonar o si encuentras problemas de configuración
 
 ## 🚦 Ejecución
 
@@ -158,22 +172,45 @@ La aplicación está configurada para **deployment automático**. Cada `git push
 
 ## 📚 Documentación
 
+- **[QUICK_START.md](./QUICK_START.md)**: Guía rápida para configurar el entorno local (⭐ Comienza aquí)
 - **[VERCEL_DEPLOYMENT.md](./VERCEL_DEPLOYMENT.md)**: Guía completa de deployment automático
 - **[ERRORES_CONOCIDOS.md](./ERRORES_CONOCIDOS.md)**: Errores conocidos y soluciones
 - **[frontend/.env.example](./frontend/.env.example)**: Template de variables de entorno
 
 ## 🛠️ Comandos Disponibles
 
+### Scripts de Configuración
+
+```powershell
+# Windows PowerShell
+.\setup.ps1           # Instalar y configurar proyecto
+.\verify-setup.ps1    # Verificar configuración completa
+
+# Linux/macOS
+./setup.sh            # Instalar y configurar proyecto
+./verify-setup.sh     # Verificar configuración completa
+```
+
+### Scripts de Desarrollo (en directorio frontend/)
+
 ```bash
 # Desarrollo
-npm run dev          # Servidor de desarrollo
+npm run dev           # Servidor de desarrollo (http://localhost:5173)
 
 # Build
-npm run build        # Build para producción
-npm run preview      # Preview del build
+npm run build         # Build para producción
+npm run preview       # Preview del build local
 
-# Instalación
-npm run setup        # Script de instalación automática
+# Validación
+npm run check         # Verificar tipos TypeScript
+```
+
+### Scripts del Workspace Raíz
+
+```bash
+npm run setup         # Ejecuta setup.ps1 o setup.sh automáticamente
+npm run dev           # Inicia servidor de desarrollo del frontend
+npm run build         # Build del frontend
 ```
 
 ## 📝 Próximos Pasos

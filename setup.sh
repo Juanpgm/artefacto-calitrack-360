@@ -93,15 +93,40 @@ echo "========================================"
 echo ""
 echo -e "${YELLOW}📋 Próximos pasos:${NC}"
 echo ""
-echo -e "${NC}1. Configura las credenciales de Firebase en:${NC}"
-echo -e "${CYAN}   frontend/.env.local${NC}"
-echo ""
-echo -e "${NC}2. Inicia el servidor de desarrollo:${NC}"
+
+# Validar si las credenciales están configuradas correctamente
+NEEDS_CONFIG=false
+if [ -f "$SCRIPT_DIR/frontend/.env.local" ]; then
+    if grep -q "tu-api-key-aqui\|tu-proyecto" "$SCRIPT_DIR/frontend/.env.local"; then
+        NEEDS_CONFIG=true
+    fi
+fi
+
+if [ "$NEEDS_CONFIG" = true ]; then
+    echo -e "${RED}1. IMPORTANTE: Configura las credenciales de Firebase en:${NC}"
+    echo -e "${CYAN}   frontend/.env.local${NC}"
+    echo ""
+    echo -e "${YELLOW}   Obtener credenciales desde:${NC}"
+    echo -e "${NC}   Firebase Console > Project Settings > Your apps > Web app${NC}"
+    echo ""
+    echo -e "${NC}2. Después de configurar Firebase, inicia el servidor:${NC}"
+else
+    echo -e "${GREEN}1. ¡Todo listo! Inicia el servidor de desarrollo:${NC}"
+fi
+
 echo -e "${CYAN}   cd frontend${NC}"
 echo -e "${CYAN}   npm run dev${NC}"
 echo ""
-echo -e "${NC}3. Abre en tu navegador:${NC}"
+
+if [ "$NEEDS_CONFIG" = true ]; then
+    echo -e "${NC}3. Abre en tu navegador:${NC}"
+else
+    echo -e "${NC}2. Abre en tu navegador:${NC}"
+fi
+
 echo -e "${CYAN}   http://localhost:5173${NC}"
+echo ""
+echo -e "${CYAN}API Backend configurada: https://gestorproyectoapi-production.up.railway.app${NC}"
 echo ""
 echo -e "${YELLOW}📖 Para más información, consulta README.md${NC}"
 echo ""
