@@ -1,6 +1,5 @@
 {
-  "buildCommand": "cd frontend && npm ci && npm run build",
-  "installCommand": "npm install --legacy-peer-deps || true",
+  "buildCommand": "(cd frontend && npm install && npm run build) || (npm install && cd frontend && npm install && npm run build)",
   "outputDirectory": "frontend/dist",
   "framework": null,
   "headers": [
