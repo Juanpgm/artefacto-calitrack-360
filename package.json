@@ -4,8 +4,7 @@
   "description": "PWA para captura de información de proyectos de infraestructura",
   "private": true,
   "engines": {
-    "node": ">=18.18.0",
-    "npm": ">=9.0.0"
+    "node": "20.x"
   },
   "workspaces": [
     "frontend"
