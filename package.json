@@ -3,6 +3,10 @@
   "version": "1.0.0",
   "description": "PWA para captura de información de proyectos de infraestructura",
   "private": true,
+  "engines": {
+    "node": ">=18.18.0",
+    "npm": ">=9.0.0"
+  },
   "workspaces": [
     "frontend"
   ],
@@ -13,10 +17,10 @@
     "verify": "npm run verify:windows || npm run verify:unix",
     "verify:windows": "powershell -ExecutionPolicy Bypass -File ./verify-setup.ps1",
     "verify:unix": "bash ./verify-setup.sh",
-    "dev": "npm run dev --workspace=frontend",
-    "build": "npm run build --workspace=frontend",
-    "preview": "npm run preview --workspace=frontend",
-    "install:all": "npm install --workspace=frontend"
+    "dev": "cd frontend && npm run dev",
+    "build": "cd frontend && npm install && npm run build",
+    "preview": "cd frontend && npm run preview",
+    "install:all": "cd frontend && npm install"
   },
   "keywords": [
     "pwa",

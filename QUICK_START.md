@@ -14,11 +14,13 @@ cd artefacto-calitrack-360
 ### 2. Configurar el Entorno
 
 **Windows:**
+
 ```powershell
 .\setup.ps1
 ```
 
 **Linux/macOS:**
+
 ```bash
 chmod +x setup.sh
 ./setup.sh
@@ -40,21 +42,25 @@ npm run dev
 Antes de empezar a desarrollar, verifica que todo esté correcto:
 
 **Windows:**
+
 ```powershell
 .\verify-setup.ps1
 ```
 
 **Linux/macOS:**
+
 ```bash
 ./verify-setup.sh
 ```
 
 O desde npm:
+
 ```bash
 npm run verify
 ```
 
 El script verificará:
+
 - ✅ Node.js y npm instalados
 - ✅ Estructura de directorios correcta
 - ✅ Archivos de configuración presentes
@@ -144,6 +150,7 @@ Si tienes usuarios configurados en Firebase Authentication:
 ### API Backend
 
 La aplicación se conecta automáticamente a:
+
 - **URL**: https://gestorproyectoapi-production.up.railway.app
 - **Docs**: https://gestorproyectoapi-production.up.railway.app/docs
 
@@ -156,6 +163,7 @@ La aplicación se conecta automáticamente a:
 **Causa**: Variables de entorno no configuradas o incorrectas
 
 **Solución**:
+
 ```bash
 # 1. Verificar que .env.local existe
 ls frontend/.env.local
@@ -174,6 +182,7 @@ cp .env.example .env.local
 **Causa**: Node.js o npm no instalados
 
 **Solución**:
+
 1. Descarga Node.js desde https://nodejs.org/
 2. Instala la versión LTS (18+)
 3. Verifica: `node --version` y `npm --version`
@@ -183,6 +192,7 @@ cp .env.example .env.local
 **Causa**: El puerto ya está siendo usado por otro proceso
 
 **Solución**:
+
 ```bash
 # Opción 1: Usar otro puerto
 cd frontend
@@ -201,6 +211,7 @@ lsof -ti:5173 | xargs kill -9
 **Causa**: Errores de TypeScript o dependencias faltantes
 
 **Solución**:
+
 ```bash
 # 1. Verificar errores de tipos
 cd frontend
@@ -219,6 +230,7 @@ npm run build
 **Causa**: Sin conexión a internet o API caída
 
 **Solución**:
+
 ```bash
 # Verificar que la API esté disponible
 curl https://gestorproyectoapi-production.up.railway.app/docs
@@ -271,6 +283,7 @@ artefacto-calitrack-360/
 ### Archivos Sensibles
 
 Estos archivos **NUNCA** deben subirse a GitHub:
+
 - `frontend/.env.local` - Credenciales de Firebase
 - `frontend/node_modules/` - Dependencias
 - `.vercel/` - Config de Vercel
