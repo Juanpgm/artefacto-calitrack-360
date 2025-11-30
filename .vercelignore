@@ -1,8 +1,0 @@
-# Solo ignorar lo estrictamente necesario
-node_modules
-.env.local
-*.log
-.DS_Store
-.idea
-*.suo
-*.sw?
