@@ -3,12 +3,12 @@ import { getAuth, setPersistence, browserLocalPersistence } from 'firebase/auth'
 
 // Configuración de Firebase desde variables de entorno
 const firebaseConfig = {
-  apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
-  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
-  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID,
-  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET,
-  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID,
-  appId: import.meta.env.VITE_FIREBASE_APP_ID
+  apiKey: import.meta.env.VITE_FIREBASE_API_KEY || '',
+  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN || '',
+  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID || '',
+  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET || '',
+  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID || '',
+  appId: import.meta.env.VITE_FIREBASE_APP_ID || ''
 };
 
 // Validar configuración
@@ -17,7 +17,9 @@ const missingConfig = requiredConfig.filter(key => !firebaseConfig[key as keyof 
 
 if (missingConfig.length > 0) {
   console.error('❌ Firebase configuration is missing:', missingConfig);
-  throw new Error(`Missing Firebase configuration: ${missingConfig.join(', ')}`);
+  console.error('⚠️ Please configure the following environment variables in Vercel:');
+  console.error('   VITE_FIREBASE_API_KEY, VITE_FIREBASE_AUTH_DOMAIN, VITE_FIREBASE_PROJECT_ID');
+  // No lanzar error para permitir que la app cargue y muestre mensaje al usuario
 }
 
 // Inicializar Firebase
