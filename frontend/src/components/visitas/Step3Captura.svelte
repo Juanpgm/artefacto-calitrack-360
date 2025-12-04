@@ -5,14 +5,15 @@
   import Select from '../ui/Select.svelte';
   import Button from '../ui/Button.svelte';
   import Card from '../ui/Card.svelte';
-  import type { Coordenadas, CentroGestor, UPEntorno } from '../../types/visitas';
-  import { formatCoordinates } from '../../lib/geolocation';
+  import type { Coordenadas, CentroGestor, UPEntorno, UnidadProyecto } from '../../types/visitas';
+  import { formatCoordinates, calculateDistanceToGeometry } from '../../lib/geolocation';
   
   export let coordenadas: Coordenadas | undefined;
   export let descripcionIntervencion: string;
   export let descripcionSolicitud: string;
   export let upEntorno: UPEntorno[];
   export let centrosGestores: CentroGestor[];
+  export let selectedUP: UnidadProyecto | undefined;
   export let onCaptureGPS: () => Promise<void>;
   export let onLoadCentros: () => Promise<void>;
   export let onAddEntorno: (entorno: Omit<UPEntorno, 'id'>) => void;
@@ -23,20 +24,44 @@
   let gpsError = '';
   let nuevoCentroGestor = '';
   let nuevaDescripcion = '';
+  let autoCaptureAttempted = false;
+  let distanceToProject: number | null = null;
+  let showDistanceWarning = false;
+
+  // Recalcular distancia cuando cambien las coordenadas
+  $: if (coordenadas && selectedUP?.geometry) {
+    distanceToProject = calculateDistanceToGeometry(coordenadas, selectedUP.geometry);
+    showDistanceWarning = distanceToProject !== null && distanceToProject > 200;
+  }
 
   onMount(async () => {
+    // Cargar centros gestores si no están cargados
     if (centrosGestores.length === 0) {
       await onLoadCentros();
+    }
+
+    // Capturar GPS automáticamente al entrar al paso
+    if (!coordenadas && !autoCaptureAttempted) {
+      autoCaptureAttempted = true;
+      await handleCaptureGPS();
     }
   });
 
   async function handleCaptureGPS() {
     gpsError = '';
+    
     try {
       await onCaptureGPS();
     } catch (error) {
       gpsError = error instanceof Error ? error.message : 'Error al capturar GPS';
     }
+  }
+
+  function formatDistance(meters: number): string {
+    if (meters < 1000) {
+      return `${Math.round(meters)}m`;
+    }
+    return `${(meters / 1000).toFixed(2)}km`;
   }
 
   function handleAddEntorno() {
@@ -69,14 +94,23 @@
       <div class="gps-section">
         <div class="section-header">
           <h4>📍 Coordenadas GPS</h4>
-          {#if !coordenadas}
+          {#if coordenadas}
+            <Button size="sm" variant="outline" onClick={handleCaptureGPS} disabled={isLoading}>
+              {isLoading ? '...' : 'Actualizar'}
+            </Button>
+          {:else if gpsError}
             <Button size="sm" onClick={handleCaptureGPS} disabled={isLoading}>
-              {isLoading ? '...' : 'Capturar'}
+              {isLoading ? '...' : 'Reintentar'}
             </Button>
           {/if}
         </div>
 
-        {#if coordenadas}
+        {#if isLoading && !coordenadas}
+          <div class="gps-loading">
+            <div class="spinner"></div>
+            <p>Obteniendo ubicación GPS...</p>
+          </div>
+        {:else if coordenadas}
           <div class="gps-info">
             <div class="gps-grid">
               <Input
@@ -90,21 +124,25 @@
                 readonly={true}
               />
             </div>
-            <div class="gps-actions">
+            <div class="gps-meta">
               {#if coordenadas.accuracy}
                 <span class="gps-accuracy">
-                  ±{coordenadas.accuracy.toFixed(0)}m
+                  Precisión: ±{coordenadas.accuracy.toFixed(0)}m
                 </span>
               {/if}
-              <Button size="sm" variant="outline" onClick={handleCaptureGPS}>
-                Actualizar
-              </Button>
+              {#if distanceToProject !== null}
+                <span class="gps-distance" class:warning={showDistanceWarning}>
+                  Distancia al proyecto: {formatDistance(distanceToProject)}
+                </span>
+              {/if}
             </div>
           </div>
-        {:else}
-          <p class="gps-placeholder">
-            Presione el botón para capturar ubicación
-          </p>
+
+          {#if showDistanceWarning}
+            <div class="warning-message">
+              ⚠️ Está a más de 200m del proyecto. Verifique que esté en la ubicación correcta.
+            </div>
+          {/if}
         {/if}
 
         {#if gpsError}
@@ -252,10 +290,39 @@
     gap: 0.75rem;
   }
 
-  .gps-actions {
+  .gps-meta {
     display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
     align-items: center;
-    justify-content: space-between;
+  }
+
+  .gps-loading {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 1.5rem;
+    gap: 0.75rem;
+  }
+
+  .gps-loading p {
+    margin: 0;
+    color: #6b7280;
+    font-size: 0.875rem;
+  }
+
+  .spinner {
+    width: 24px;
+    height: 24px;
+    border: 3px solid #e5e7eb;
+    border-top-color: #4f46e5;
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+  }
+
+  @keyframes spin {
+    to { transform: rotate(360deg); }
   }
 
   .gps-placeholder {
@@ -270,10 +337,25 @@
 
   .gps-accuracy {
     font-size: 0.75rem;
-    color: #6b7280;
-    background: #f3f4f6;
+    color: #059669;
+    background: #d1fae5;
     padding: 0.25rem 0.5rem;
     border-radius: 4px;
+    font-weight: 500;
+  }
+
+  .gps-distance {
+    font-size: 0.75rem;
+    color: #0284c7;
+    background: #e0f2fe;
+    padding: 0.25rem 0.5rem;
+    border-radius: 4px;
+    font-weight: 500;
+  }
+
+  .gps-distance.warning {
+    color: #ea580c;
+    background: #ffedd5;
   }
 
   .error-message {
@@ -283,6 +365,18 @@
     border-radius: 6px;
     font-size: 0.75rem;
     border-left: 3px solid #ef4444;
+  }
+
+  .warning-message {
+    padding: 0.5rem;
+    background: #ffedd5;
+    color: #9a3412;
+    border-radius: 6px;
+    font-size: 0.75rem;
+    border-left: 3px solid #f97316;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
   }
 
   .entorno-section {

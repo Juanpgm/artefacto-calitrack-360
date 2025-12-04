@@ -155,3 +155,73 @@ export function calculateDistance(coords1: Coordenadas, coords2: Coordenadas): n
 
   return R * c; // Distancia en metros
 }
+
+/**
+ * Calcula la distancia mínima desde una coordenada a una geometría
+ * @param coords - Coordenada actual del usuario
+ * @param geometry - Geometría del proyecto (puede ser string JSON o objeto)
+ * @returns Distancia en metros a la geometría más cercana
+ */
+export function calculateDistanceToGeometry(
+  coords: Coordenadas,
+  geometry: any
+): number | null {
+  if (!geometry || !geometry.coordinates) {
+    return null;
+  }
+
+  try {
+    // Parsear coordenadas si vienen como string
+    let coordinates = geometry.coordinates;
+    if (typeof coordinates === 'string') {
+      coordinates = JSON.parse(coordinates);
+    }
+
+    let minDistance = Infinity;
+
+    // Función helper para calcular distancia a un punto
+    const distanceToPoint = (lng: number, lat: number): number => {
+      return calculateDistance(coords, { latitude: lat, longitude: lng });
+    };
+
+    if (geometry.type === 'Point') {
+      // Point: [lng, lat]
+      const [lng, lat] = coordinates as [number, number];
+      return distanceToPoint(lng, lat);
+    } else if (geometry.type === 'LineString') {
+      // LineString: [[lng, lat], ...]
+      const points = coordinates as [number, number][];
+      points.forEach(([lng, lat]) => {
+        const dist = distanceToPoint(lng, lat);
+        if (dist < minDistance) minDistance = dist;
+      });
+      return minDistance;
+    } else if (geometry.type === 'MultiLineString') {
+      // MultiLineString: [[[lng, lat], ...], ...]
+      const lines = coordinates as [number, number][][];
+      lines.forEach((line) => {
+        line.forEach(([lng, lat]) => {
+          const dist = distanceToPoint(lng, lat);
+          if (dist < minDistance) minDistance = dist;
+        });
+      });
+      return minDistance;
+    } else if (geometry.type === 'Polygon') {
+      // Polygon: [[[lng, lat], ...]]
+      const rings = coordinates as [number, number][][];
+      rings.forEach((ring) => {
+        ring.forEach(([lng, lat]) => {
+          const dist = distanceToPoint(lng, lat);
+          if (dist < minDistance) minDistance = dist;
+        });
+      });
+      return minDistance;
+    }
+
+    return null;
+  } catch (error) {
+    console.error('Error calculando distancia a geometría:', error);
+    return null;
+  }
+}
+

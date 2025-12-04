@@ -273,6 +273,7 @@
         bind:descripcionSolicitud={state.data.descripcion_solicitud}
         bind:upEntorno={state.data.up_entorno}
         centrosGestores={state.centrosGestores}
+        selectedUP={state.selectedUP}
         onCaptureGPS={handleCaptureGPS}
         onLoadCentros={handleLoadCentros}
         onAddEntorno={visitaStore.addUPEntorno}
