@@ -129,9 +129,6 @@ export async function createVisitaVerificacion(
     // Tipo de visita
     formData.append('tipo_visita', visitaData.tipo_visita === 'verificacion' ? 'Verificación' : 'Comunicaciones');
     
-    // Observaciones (campo_comunicaciones)
-    formData.append('observaciones', visitaData.campo_comunicaciones || '');
-    
     // Usuario registrado
     formData.append('registrado_por_username', userDisplayName);
     formData.append('registrado_por_email', userEmail);

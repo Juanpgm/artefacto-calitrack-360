@@ -26,7 +26,6 @@ const initialState: FormularioState = {
     up_entorno: [],
     photos_url: [],
     fecha_registro: new Date().toISOString(),
-    campo_comunicaciones: '',
     viabilidad_alcalde: false,
     entrega_publica: false
   },

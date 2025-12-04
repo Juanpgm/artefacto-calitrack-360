@@ -10,7 +10,6 @@
   export let estado360: Estado360 | undefined;
   export let viabilidadAlcalde: boolean | undefined;
   export let entregaPublica: boolean | undefined;
-  export let campoComunicaciones: string;
   export let photosUrl: string[];
   export let photoFiles: File[] = []; // Nuevo prop para los archivos
   export let inferEstado360: () => Estado360;
@@ -24,7 +23,6 @@
       estado360,
       viabilidadAlcalde,
       entregaPublica,
-      campoComunicaciones: campoComunicaciones?.substring(0, 20),
       filesCount: photoFiles?.length
     });
   }
@@ -104,15 +102,6 @@
         />
       </div>
     </Card>
-
-    <!-- Campo Comunicaciones -->
-    <Textarea
-      label="Campo Comunicaciones"
-      bind:value={campoComunicaciones}
-      placeholder="Información adicional..."
-      rows={3}
-      maxLength={1000}
-    />
 
     <!-- Evidencia Fotográfica -->
     <Card variant="outlined" padding="sm">

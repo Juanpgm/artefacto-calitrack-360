@@ -287,7 +287,6 @@
         bind:estado360={state.data.estado_360}
         bind:viabilidadAlcalde={state.data.viabilidad_alcalde}
         bind:entregaPublica={state.data.entrega_publica}
-        bind:campoComunicaciones={state.data.campo_comunicaciones}
         bind:photosUrl={state.data.photos_url}
         bind:photoFiles={photoFiles}
         inferEstado360={visitaStore.inferEstado360}

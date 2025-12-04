@@ -104,7 +104,6 @@ export interface VisitaVerificacion {
   estado_360: Estado360;
   viabilidad_alcalde: boolean;
   entrega_publica: boolean;
-  campo_comunicaciones: string;
   photos_url: string[]; // URLs de las fotos subidas
   
   // Metadata
