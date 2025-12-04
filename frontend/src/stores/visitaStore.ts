@@ -101,12 +101,16 @@ function createVisitaStore() {
             if (currentData.entrega_publica === undefined) updates.entrega_publica = false;
         }
 
-        state.completedSteps.add(state.currentStep);
+        // Crear nuevo Set con el paso actual agregado (inmutabilidad)
+        const newCompletedSteps = new Set(state.completedSteps);
+        newCompletedSteps.add(state.currentStep);
+        
+        console.log('nextStep - Agregando paso', state.currentStep, 'a completados. Nuevos completados:', Array.from(newCompletedSteps));
         
         return {
           ...state,
           currentStep: nextStep,
-          completedSteps: new Set(state.completedSteps),
+          completedSteps: newCompletedSteps,
           data: { ...state.data, ...updates }
         };
       });

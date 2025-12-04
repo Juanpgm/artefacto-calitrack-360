@@ -6,16 +6,25 @@
   export let completedSteps: Set<StepNumber>;
   export let onStepClick: ((step: StepNumber) => void) | undefined = undefined;
 
+  // Convertir Set a Array para reactividad
+  $: completedStepsArray = Array.from(completedSteps);
+  
+  // Debug logs
+  $: console.log('Stepper - currentStep:', currentStep, 'completedSteps:', completedStepsArray);
+  
+  // Precalcular estados de forma reactiva
+  $: stepStatuses = steps.map((_, index) => {
+    if (completedStepsArray.includes(index as StepNumber)) return 'completed';
+    if (index === currentStep) return 'current';
+    return 'pending';
+  });
+  
+  $: console.log('stepStatuses:', stepStatuses);
+
   function handleStepClick(step: number) {
     if (onStepClick && step <= currentStep) {
       onStepClick(step as StepNumber);
     }
-  }
-
-  function getStepStatus(index: number): 'completed' | 'current' | 'pending' {
-    if (completedSteps.has(index as StepNumber)) return 'completed';
-    if (index === currentStep) return 'current';
-    return 'pending';
   }
 </script>
 
@@ -31,7 +40,7 @@
   <!-- Steps -->
   <div class="steps-wrapper">
     {#each steps as step, index}
-      {@const status = getStepStatus(index)}
+      {@const status = stepStatuses[index]}
       
       <button
         type="button"
