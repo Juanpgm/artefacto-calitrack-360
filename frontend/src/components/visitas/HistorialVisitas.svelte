@@ -1,9 +1,11 @@
 <script lang="ts">
   import { onMount } from 'svelte';
   import { fetchHistorialVisitas } from '../../api/visitas';
+  import { ApiClient } from '../../lib/api-client';
   import Card from '../ui/Card.svelte';
   import Button from '../ui/Button.svelte';
   import Input from '../ui/Input.svelte';
+  import MultiSelect from '../ui/MultiSelect.svelte';
 
   export let onClose: () => void;
 
@@ -25,33 +27,89 @@
     };
   }
 
-  let visitas: VisitaRegistrada[] = [];
+  let todasLasVisitas: VisitaRegistrada[] = [];
+  let visitasFiltradas: VisitaRegistrada[] = [];
   let loading = false;
   let error: string | null = null;
   
   // Filtros
   let filtroUPID = '';
-  let filtroCentroGestor = '';
+  let filtroCentrosGestores: string[] = [];
   let filtroEstado360 = '';
   let filtroTipoVisita = '';
+  let filtroAlcalde = '';
+  let filtroEntregaPublica = '';
+  let filtroFechaDesde = '';
+  let filtroFechaHasta = '';
+
+  // Estado de acordeón
+  let seccionBasicosAbierta = true;
+  let seccionAvanzadosAbierta = false;
+
+  // Paginación
+  let paginaActual = 1;
+  let itemsPorPagina = 10;
+  $: totalPaginas = Math.ceil(visitasFiltradas.length / itemsPorPagina);
+  $: visitasPaginadas = visitasFiltradas.slice(
+    (paginaActual - 1) * itemsPorPagina,
+    paginaActual * itemsPorPagina
+  );
+
+  // Opciones para multiselect
+  let centrosGestoresDisponibles: string[] = [];
+  let loadingCentros = false;
+
+  // Reactive statements para filtrado automático
+  $: {
+    // Cuando cambia cualquier filtro, aplicar filtros
+    filtroUPID;
+    filtroCentrosGestores;
+    filtroEstado360;
+    filtroTipoVisita;
+    filtroAlcalde;
+    filtroEntregaPublica;
+    filtroFechaDesde;
+    filtroFechaHasta;
+    
+    if (todasLasVisitas.length > 0) {
+      aplicarFiltrosReactive();
+    }
+  }
 
   onMount(async () => {
-    await cargarHistorial();
+    await Promise.all([
+      cargarHistorial(),
+      cargarCentrosGestores()
+    ]);
   });
+
+  async function cargarCentrosGestores() {
+    loadingCentros = true;
+    try {
+      const response = await ApiClient.get<{
+        success: boolean;
+        data: string[];
+        count: number;
+      }>('/centros-gestores/nombres-unicos');
+      
+      if (response.success && response.data) {
+        centrosGestoresDisponibles = response.data;
+      }
+    } catch (err) {
+      console.error('Error al cargar centros gestores:', err);
+    } finally {
+      loadingCentros = false;
+    }
+  }
 
   async function cargarHistorial() {
     loading = true;
     error = null;
 
     try {
-      const filtros: any = {};
-      if (filtroUPID) filtros.upid = filtroUPID;
-      if (filtroCentroGestor) filtros.nombre_centro_gestor = filtroCentroGestor;
-      if (filtroEstado360) filtros.estado_360 = filtroEstado360;
-      if (filtroTipoVisita) filtros.tipo_visita = filtroTipoVisita;
-
-      const response = await fetchHistorialVisitas(filtros);
-      visitas = response.data;
+      const response = await fetchHistorialVisitas({});
+      todasLasVisitas = response.data;
+      aplicarFiltrosReactive();
     } catch (err) {
       console.error('Error al cargar historial:', err);
       error = err instanceof Error ? err.message : 'Error al cargar el historial';
@@ -60,16 +118,75 @@
     }
   }
 
-  function handleBuscar() {
-    cargarHistorial();
+  function aplicarFiltrosReactive() {
+    const filtradas = todasLasVisitas.filter(visita => {
+      // Filtro UPID
+      if (filtroUPID && !visita.upid.toLowerCase().includes(filtroUPID.toLowerCase())) {
+        return false;
+      }
+
+      // Filtro Centros Gestores (multiselect)
+      if (filtroCentrosGestores.length > 0) {
+        if (!visita.nombre_centro_gestor || !filtroCentrosGestores.includes(visita.nombre_centro_gestor)) {
+          return false;
+        }
+      }
+
+      // Filtro Estado 360
+      if (filtroEstado360 && visita.estado_360 !== filtroEstado360) {
+        return false;
+      }
+
+      // Filtro Tipo Visita
+      if (filtroTipoVisita && visita.tipo_visita !== filtroTipoVisita) {
+        return false;
+      }
+
+      // Filtro Alcalde
+      if (filtroAlcalde === 'si' && !visita.requiere_alcalde) return false;
+      if (filtroAlcalde === 'no' && visita.requiere_alcalde) return false;
+
+      // Filtro Entrega Pública
+      if (filtroEntregaPublica === 'si' && !visita.entrega_publica) return false;
+      if (filtroEntregaPublica === 'no' && visita.entrega_publica) return false;
+
+      // Filtro Fecha Desde
+      if (filtroFechaDesde) {
+        const fechaVisita = new Date(visita.fecha_registro);
+        const fechaDesde = new Date(filtroFechaDesde);
+        if (fechaVisita < fechaDesde) return false;
+      }
+
+      // Filtro Fecha Hasta
+      if (filtroFechaHasta) {
+        const fechaVisita = new Date(visita.fecha_registro);
+        const fechaHasta = new Date(filtroFechaHasta);
+        fechaHasta.setHours(23, 59, 59, 999);
+        if (fechaVisita > fechaHasta) return false;
+      }
+
+      return true;
+    });
+
+    visitasFiltradas = filtradas;
+    paginaActual = 1; // Resetear a página 1
   }
 
   function handleLimpiarFiltros() {
     filtroUPID = '';
-    filtroCentroGestor = '';
+    filtroCentrosGestores = [];
     filtroEstado360 = '';
     filtroTipoVisita = '';
-    cargarHistorial();
+    filtroAlcalde = '';
+    filtroEntregaPublica = '';
+    filtroFechaDesde = '';
+    filtroFechaHasta = '';
+  }
+
+  function cambiarPagina(nuevaPagina: number) {
+    if (nuevaPagina >= 1 && nuevaPagina <= totalPaginas) {
+      paginaActual = nuevaPagina;
+    }
   }
 
   function formatDate(isoString: string): string {
@@ -118,50 +235,139 @@
   </div>
 
   <!-- Filtros -->
-  <Card padding="md">
+  <Card padding="sm">
     <div class="filtros-section">
-      <h3>Filtros de búsqueda</h3>
+      <div class="filtros-header">
+        <h3>🔍 Filtros</h3>
+        <button class="clear-filters-btn" on:click={handleLimpiarFiltros}>
+          Limpiar
+        </button>
+      </div>
       
-      <div class="filtros-grid">
+      <!-- Filtros Básicos (Siempre visibles) -->
+      <div class="filtros-basicos">
         <Input
           label="UPID"
           bind:value={filtroUPID}
           placeholder="Ej: UNP-MASIVO-001"
         />
 
-        <Input
+        <MultiSelect
           label="Centro Gestor"
-          bind:value={filtroCentroGestor}
-          placeholder="Ej: Secretaría de..."
+          options={centrosGestoresDisponibles}
+          bind:selected={filtroCentrosGestores}
+          placeholder="Todos"
+          searchPlaceholder="Buscar..."
         />
 
-        <div class="filter-select">
-          <label>Estado 360</label>
-          <select bind:value={filtroEstado360}>
-            <option value="">Todos</option>
-            <option value="Antes">Antes</option>
-            <option value="Durante">Durante</option>
-            <option value="Después">Después</option>
-          </select>
-        </div>
-
-        <div class="filter-select">
-          <label>Tipo de Visita</label>
-          <select bind:value={filtroTipoVisita}>
-            <option value="">Todos</option>
-            <option value="Verificación">Verificación</option>
-            <option value="Comunicaciones">Comunicaciones</option>
-          </select>
+        <div class="date-filters">
+          <div class="filter-input">
+            <label>Desde</label>
+            <input type="date" bind:value={filtroFechaDesde} />
+          </div>
+          <div class="filter-input">
+            <label>Hasta</label>
+            <input type="date" bind:value={filtroFechaHasta} />
+          </div>
         </div>
       </div>
 
-      <div class="filtros-actions">
-        <Button variant="primary" size="md" onClick={handleBuscar}>
-          🔍 Buscar
-        </Button>
-        <Button variant="outline" size="md" onClick={handleLimpiarFiltros}>
-          Limpiar Filtros
-        </Button>
+      <!-- Acordeón Filtros Avanzados -->
+      <div class="filtros-acordeon">
+        <button 
+          class="acordeon-toggle"
+          on:click={() => seccionAvanzadosAbierta = !seccionAvanzadosAbierta}
+          type="button"
+        >
+          <span class="acordeon-title">Filtros Avanzados</span>
+          <span class="acordeon-icon" class:open={seccionAvanzadosAbierta}>▼</span>
+        </button>
+
+        {#if seccionAvanzadosAbierta}
+          <div class="acordeon-content">
+            <!-- Tipo y Estado 360 en 2 columnas -->
+            <div class="filters-two-cols">
+              <div class="filter-radio-compact">
+                <label class="filter-label-small">Tipo</label>
+                <div class="radio-options-inline">
+                  <label class="radio-option-small">
+                    <input type="radio" bind:group={filtroTipoVisita} value="" />
+                    <span>Todos</span>
+                  </label>
+                  <label class="radio-option-small">
+                    <input type="radio" bind:group={filtroTipoVisita} value="Verificación" />
+                    <span>Verificación</span>
+                  </label>
+                  <label class="radio-option-small">
+                    <input type="radio" bind:group={filtroTipoVisita} value="Comunicaciones" />
+                    <span>Comunicaciones</span>
+                  </label>
+                </div>
+              </div>
+
+              <div class="filter-radio-compact">
+                <label class="filter-label-small">Estado 360</label>
+                <div class="radio-options-inline">
+                  <label class="radio-option-small">
+                    <input type="radio" bind:group={filtroEstado360} value="" />
+                    <span>Todos</span>
+                  </label>
+                  <label class="radio-option-small">
+                    <input type="radio" bind:group={filtroEstado360} value="Antes" />
+                    <span>Antes</span>
+                  </label>
+                  <label class="radio-option-small">
+                    <input type="radio" bind:group={filtroEstado360} value="Durante" />
+                    <span>Durante</span>
+                  </label>
+                  <label class="radio-option-small">
+                    <input type="radio" bind:group={filtroEstado360} value="Después" />
+                    <span>Después</span>
+                  </label>
+                </div>
+              </div>
+            </div>
+
+            <!-- Alcalde y Entrega Pública -->
+            <div class="filters-two-cols">
+              <div class="filter-radio-compact">
+                <label class="filter-label-small">Alcalde</label>
+                <div class="radio-options-inline">
+                  <label class="radio-option-small">
+                    <input type="radio" bind:group={filtroAlcalde} value="" />
+                    <span>Todos</span>
+                  </label>
+                  <label class="radio-option-small">
+                    <input type="radio" bind:group={filtroAlcalde} value="si" />
+                    <span>Sí</span>
+                  </label>
+                  <label class="radio-option-small">
+                    <input type="radio" bind:group={filtroAlcalde} value="no" />
+                    <span>No</span>
+                  </label>
+                </div>
+              </div>
+
+              <div class="filter-radio-compact">
+                <label class="filter-label-small">Entrega Pública</label>
+                <div class="radio-options-inline">
+                  <label class="radio-option-small">
+                    <input type="radio" bind:group={filtroEntregaPublica} value="" />
+                    <span>Todos</span>
+                  </label>
+                  <label class="radio-option-small">
+                    <input type="radio" bind:group={filtroEntregaPublica} value="si" />
+                    <span>Sí</span>
+                  </label>
+                  <label class="radio-option-small">
+                    <input type="radio" bind:group={filtroEntregaPublica} value="no" />
+                    <span>No</span>
+                  </label>
+                </div>
+              </div>
+            </div>
+          </div>
+        {/if}
       </div>
     </div>
   </Card>
@@ -179,16 +385,21 @@
           Reintentar
         </Button>
       </div>
-    {:else if visitas.length === 0}
+    {:else if visitasFiltradas.length === 0}
       <div class="empty-state">
-        <p>📋 No se encontraron visitas registradas</p>
+        <p>📋 No se encontraron visitas con los filtros aplicados</p>
       </div>
     {:else}
       <div class="results-header">
-        <p>Se encontraron <strong>{visitas.length}</strong> visitas</p>
+        <p>Se encontraron <strong>{visitasFiltradas.length}</strong> visitas</p>
+        {#if totalPaginas > 1}
+          <p class="pagination-info">
+            Mostrando {(paginaActual - 1) * itemsPorPagina + 1} - {Math.min(paginaActual * itemsPorPagina, visitasFiltradas.length)} de {visitasFiltradas.length}
+          </p>
+        {/if}
       </div>
 
-      {#each visitas as visita (visita.document_id)}
+      {#each visitasPaginadas as visita (visita.document_id)}
         <Card padding="md">
           <div class="visita-item">
             <div class="visita-header">
@@ -246,6 +457,57 @@
           </div>
         </Card>
       {/each}
+
+      <!-- Paginación -->
+      {#if totalPaginas > 1}
+        <div class="pagination">
+          <button
+            class="pagination-btn"
+            on:click={() => cambiarPagina(1)}
+            disabled={paginaActual === 1}
+          >
+            ⏮️
+          </button>
+          <button
+            class="pagination-btn"
+            on:click={() => cambiarPagina(paginaActual - 1)}
+            disabled={paginaActual === 1}
+          >
+            ◀️
+          </button>
+          
+          <div class="pagination-pages">
+            {#each Array.from({ length: totalPaginas }, (_, i) => i + 1) as pagina}
+              {#if pagina === 1 || pagina === totalPaginas || (pagina >= paginaActual - 1 && pagina <= paginaActual + 1)}
+                <button
+                  class="pagination-page"
+                  class:active={pagina === paginaActual}
+                  on:click={() => cambiarPagina(pagina)}
+                >
+                  {pagina}
+                </button>
+              {:else if pagina === paginaActual - 2 || pagina === paginaActual + 2}
+                <span class="pagination-ellipsis">...</span>
+              {/if}
+            {/each}
+          </div>
+
+          <button
+            class="pagination-btn"
+            on:click={() => cambiarPagina(paginaActual + 1)}
+            disabled={paginaActual === totalPaginas}
+          >
+            ▶️
+          </button>
+          <button
+            class="pagination-btn"
+            on:click={() => cambiarPagina(totalPaginas)}
+            disabled={paginaActual === totalPaginas}
+          >
+            ⏭️
+          </button>
+        </div>
+      {/if}
     {/if}
   </div>
 </div>
@@ -295,59 +557,288 @@
   .filtros-section {
     display: flex;
     flex-direction: column;
-    gap: 1rem;
+    gap: 0.75rem;
+  }
+
+  .filtros-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 0.25rem;
   }
 
   .filtros-section h3 {
     margin: 0;
-    font-size: 1rem;
+    font-size: 0.875rem;
     font-weight: 600;
     color: #2d3748;
   }
 
-  .filtros-grid {
-    display: grid;
-    grid-template-columns: 1fr;
-    gap: 0.875rem;
+  .clear-filters-btn {
+    padding: 0.25rem 0.625rem;
+    background: none;
+    border: 1px solid #e2e8f0;
+    border-radius: 4px;
+    color: #718096;
+    font-size: 0.75rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
   }
 
-  @media (min-width: 640px) {
-    .filtros-grid {
-      grid-template-columns: repeat(2, 1fr);
-    }
+  .clear-filters-btn:hover {
+    border-color: #cbd5e0;
+    background: #f7fafc;
+    color: #4a5568;
   }
 
-  .filter-select {
+  /* Filtros Básicos */
+  .filtros-basicos {
     display: flex;
     flex-direction: column;
+    gap: 0.5rem;
+  }
+
+  /* Acordeón */
+  .filtros-acordeon {
+    margin-top: 0.625rem;
+    border: 1px solid #e2e8f0;
+    border-radius: 4px;
+    overflow: hidden;
+  }
+
+  .acordeon-toggle {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0.5rem 0.625rem;
+    background: #f7fafc;
+    border: none;
+    cursor: pointer;
+    transition: background 0.2s ease;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  .acordeon-toggle:hover {
+    background: #edf2f7;
+  }
+
+  .acordeon-title {
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: #2d3748;
+  }
+
+  .acordeon-icon {
+    font-size: 0.625rem;
+    color: #718096;
+    transition: transform 0.2s ease;
+  }
+
+  .acordeon-icon.open {
+    transform: rotate(180deg);
+  }
+
+  .acordeon-content {
+    padding: 0.625rem;
+    background: white;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    border-top: 1px solid #e2e8f0;
+  }
+
+  /* Grid 2 columnas para filtros avanzados */
+  .filters-two-cols {
+    display: grid;
+    grid-template-columns: 1fr;
     gap: 0.375rem;
   }
 
-  .filter-select label {
-    font-size: 0.8125rem;
+  @media (min-width: 640px) {
+    .filters-two-cols {
+      grid-template-columns: 1fr 1fr;
+    }
+  }
+
+  /* Grid 2 columnas */
+  .filtros-two-columns {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 0.75rem;
+  }
+
+  @media (min-width: 768px) {
+    .filtros-two-columns {
+      grid-template-columns: 1fr 1fr;
+    }
+  }
+
+  .filter-column {
+    display: flex;
+    flex-direction: column;
+    gap: 0.625rem;
+  }
+
+  .filters-inline-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.375rem;
+  }
+
+  .date-filters {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.375rem;
+  }
+
+  .filter-input {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+  }
+
+  .filter-input label {
+    font-size: 0.6875rem;
     font-weight: 500;
     color: #4a5568;
   }
 
-  .filter-select select {
-    padding: 0.625rem 0.875rem;
+  .filter-input input[type="date"] {
+    padding: 0.375rem 0.5rem;
     border: 1px solid #cbd5e0;
-    border-radius: 8px;
-    font-size: 0.9375rem;
+    border-radius: 4px;
+    font-size: 0.75rem;
     background: white;
-    min-height: 44px;
+    min-height: 32px;
   }
 
-  .filter-select select:focus {
+  .filter-input input[type="date"]:focus {
     outline: none;
     border-color: #667eea;
-    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+    box-shadow: 0 0 0 2px rgba(102, 126, 234, 0.1);
   }
 
-  .filtros-actions {
+  /* Radio Buttons Compactos */
+  .filter-radio-compact {
     display: flex;
-    gap: 0.75rem;
-    margin-top: 0.5rem;
+    flex-direction: column;
+    gap: 0.375rem;
+    padding: 0.5rem;
+    background: #f7fafc;
+    border-radius: 4px;
+    border: 1px solid #e2e8f0;
+  }
+
+  .filter-label-small {
+    font-size: 0.6875rem;
+    font-weight: 600;
+    color: #2d3748;
+    margin: 0;
+  }
+
+  .radio-options-inline {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.25rem;
+  }
+
+  .radio-option-small {
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+    padding: 0.25rem 0.5rem;
+    background: white;
+    border: 1px solid #e2e8f0;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: all 0.15s ease;
+    -webkit-tap-highlight-color: transparent;
+    flex-shrink: 0;
+  }
+
+  .radio-option-small:hover {
+    border-color: #cbd5e0;
+  }
+
+  .radio-option-small:has(input:checked) {
+    border-color: #667eea;
+    background: #eef2ff;
+  }
+
+  .radio-option-small input[type="radio"] {
+    width: 14px;
+    height: 14px;
+    margin: 0;
+    cursor: pointer;
+    accent-color: #667eea;
+  }
+
+  .radio-option-small span {
+    font-size: 0.75rem;
+    font-weight: 500;
+    color: #2d3748;
+    white-space: nowrap;
+  }
+
+  .radio-option-small:has(input:checked) span {
+    color: #667eea;
+    font-weight: 600;
+  }
+
+  /* Override Input component styles for compact layout */
+  .filter-column :global(.input-wrapper) {
+    margin-bottom: 0;
+  }
+
+  .filter-column :global(.input-label) {
+    font-size: 0.6875rem;
+    margin-bottom: 0.25rem;
+  }
+
+  .filter-column :global(.input-field) {
+    padding: 0.375rem 0.5rem;
+    font-size: 0.75rem;
+    min-height: 32px;
+    border-radius: 4px;
+  }
+
+  /* Override MultiSelect styles for compact layout */
+  .filter-column :global(.multiselect-label) {
+    font-size: 0.6875rem;
+  }
+
+  .filter-column :global(.multiselect-trigger) {
+    min-height: 32px;
+    padding: 0.375rem 0.5rem;
+    font-size: 0.75rem;
+    border-radius: 4px;
+  }
+
+  .filter-column :global(.multiselect-arrow) {
+    font-size: 0.625rem;
+  }
+
+  .filter-column :global(.multiselect-dropdown) {
+    border-radius: 4px;
+  }
+
+  .filter-column :global(.search-input) {
+    font-size: 0.75rem;
+    padding: 0.375rem 0.5rem;
+  }
+
+  .filter-column :global(.multiselect-option) {
+    padding: 0.5rem;
+  }
+
+  .filter-column :global(.option-text) {
+    font-size: 0.75rem;
+  }
+
+  .filter-column :global(.clear-btn) {
+    font-size: 0.75rem;
   }
 
   .visitas-list {
@@ -385,6 +876,12 @@
     margin: 0;
     font-size: 0.9375rem;
     color: #2d3748;
+  }
+
+  .pagination-info {
+    font-size: 0.8125rem !important;
+    color: #6b7280 !important;
+    margin-top: 0.25rem !important;
   }
 
   .visita-item {
@@ -482,5 +979,91 @@
 
   .detail-value {
     color: #2d3748;
+  }
+
+  /* Paginación */
+  .pagination {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.25rem;
+    padding: 0.625rem 0.5rem;
+    background: rgba(255, 255, 255, 0.95);
+    border-radius: 6px;
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .pagination-btn {
+    min-width: 32px;
+    width: 32px;
+    height: 32px;
+    padding: 0;
+    border: 1px solid #e2e8f0;
+    border-radius: 4px;
+    background: white;
+    color: #4a5568;
+    font-size: 0.875rem;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    -webkit-tap-highlight-color: transparent;
+    flex-shrink: 0;
+  }
+
+  .pagination-btn:hover:not(:disabled) {
+    border-color: #667eea;
+    background: #f7fafc;
+  }
+
+  .pagination-btn:disabled {
+    opacity: 0.3;
+    cursor: not-allowed;
+  }
+
+  .pagination-pages {
+    display: flex;
+    gap: 0.25rem;
+    align-items: center;
+    flex-shrink: 0;
+  }
+
+  .pagination-page {
+    min-width: 32px;
+    width: 32px;
+    height: 32px;
+    padding: 0;
+    border: 1px solid #e2e8f0;
+    border-radius: 4px;
+    background: white;
+    color: #4a5568;
+    font-size: 0.8125rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    -webkit-tap-highlight-color: transparent;
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .pagination-page:hover {
+    border-color: #667eea;
+    background: #f7fafc;
+  }
+
+  .pagination-page.active {
+    border-color: #667eea;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+  }
+
+  .pagination-ellipsis {
+    color: #a0aec0;
+    font-weight: 700;
+    font-size: 0.75rem;
+    padding: 0 0.125rem;
+    flex-shrink: 0;
   }
 </style>
