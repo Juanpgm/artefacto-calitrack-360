@@ -2,6 +2,8 @@
   import { onMount } from 'svelte';
   import Button from '../ui/Button.svelte';
   import type { UnidadProyecto } from '../../types/visitas';
+  import { getCurrentPosition, calculateDistanceToGeometry } from '../../lib/geolocation';
+  import type { Coordenadas } from '../../types/visitas';
   
   export let unidadesProyecto: UnidadProyecto[];
   export let selectedUP: UnidadProyecto | null;
@@ -11,20 +13,24 @@
 
   let searchTerm = '';
   let showColumnSelector = false;
+  let currentLocation: Coordenadas | null = null;
+  let capturingLocation = false;
+  let sortByDistance = true; // Por defecto ordenar por distancia
   
   // Paginación
   let currentPage = 1;
   let itemsPerPage = 10;
 
-  // Columnas disponibles (por defecto solo UP ID, Nombre UP y Avance % visibles)
+  // Columnas disponibles
   interface ColumnConfig {
-    key: keyof UnidadProyecto;
+    key: keyof UnidadProyecto | 'distancia';
     label: string;
     visible: boolean;
     width?: string;
   }
 
   let columns: ColumnConfig[] = [
+    { key: 'distancia', label: 'Distancia', visible: true, width: '100px' },
     { key: 'upid', label: 'UP ID', visible: true, width: '80px' },
     { key: 'nombre_up', label: 'Nombre UP', visible: true, width: '200px' },
     { key: 'nombre_up_detalle', label: 'Detalle UP', visible: true, width: '200px' },
@@ -51,9 +57,18 @@
     );
   });
 
+  // Ordenar por distancia si hay ubicación actual
+  $: sortedProyectos = sortByDistance && currentLocation 
+    ? [...filteredProyectos].sort((a, b) => {
+        const distA = calculateProjectDistance(a);
+        const distB = calculateProjectDistance(b);
+        return distA - distB;
+      })
+    : filteredProyectos;
+
   // Paginación
-  $: totalPages = Math.ceil(filteredProyectos.length / itemsPerPage);
-  $: paginatedProyectos = filteredProyectos.slice(
+  $: totalPages = Math.ceil(sortedProyectos.length / itemsPerPage);
+  $: paginatedProyectos = sortedProyectos.slice(
     (currentPage - 1) * itemsPerPage,
     currentPage * itemsPerPage
   );
@@ -63,10 +78,53 @@
     currentPage = 1;
   }
 
+  // Función para calcular distancia a un proyecto
+  function calculateProjectDistance(up: UnidadProyecto): number {
+    if (!currentLocation || !up.geometry || !up.geometry.coordinates) {
+      return Infinity;
+    }
+    
+    try {
+      return calculateDistanceToGeometry(currentLocation, up.geometry);
+    } catch (error) {
+      console.error('Error calculando distancia:', error);
+      return Infinity;
+    }
+  }
+
+  // Formatear distancia para mostrar
+  function formatDistance(distance: number): string {
+    if (distance === Infinity || isNaN(distance)) {
+      return 'N/A';
+    }
+    
+    if (distance < 1000) {
+      return `${Math.round(distance)}m`;
+    } else {
+      return `${(distance / 1000).toFixed(1)}km`;
+    }
+  }
+
+  // Capturar ubicación GPS automáticamente
+  async function captureLocation() {
+    capturingLocation = true;
+    try {
+      currentLocation = await getCurrentPosition();
+      console.log('Ubicación capturada:', currentLocation);
+    } catch (error) {
+      console.error('Error capturando ubicación:', error);
+      currentLocation = null;
+    } finally {
+      capturingLocation = false;
+    }
+  }
+
   onMount(async () => {
     if (unidadesProyecto.length === 0) {
       await onLoadUPs();
     }
+    // Capturar ubicación automáticamente al montar
+    await captureLocation();
   });
 
   function handleSelectUP(up: UnidadProyecto) {
@@ -157,7 +215,7 @@
     }
   }
 
-  function toggleColumnVisibility(columnKey: keyof UnidadProyecto) {
+  function toggleColumnVisibility(columnKey: keyof UnidadProyecto | 'distancia') {
     columns = columns.map(col => 
       col.key === columnKey ? { ...col, visible: !col.visible } : col
     );
@@ -172,8 +230,14 @@
     }).format(value);
   }
 
-  function getCellValue(up: UnidadProyecto, key: keyof UnidadProyecto): string {
-    const value = up[key];
+  function getCellValue(up: UnidadProyecto, key: keyof UnidadProyecto | 'distancia'): string {
+    // Caso especial para distancia
+    if (key === 'distancia') {
+      const distance = calculateProjectDistance(up);
+      return formatDistance(distance);
+    }
+
+    const value = up[key as keyof UnidadProyecto];
     
     if (value === null || value === undefined) return '-';
     
@@ -214,6 +278,31 @@
         />
         
         <div class="toolbar-actions">
+          <!-- Indicador de GPS -->
+          <div class="gps-indicator">
+            {#if capturingLocation}
+              <div class="gps-status capturing">
+                <div class="spinner-small"></div>
+                <span>Capturando GPS...</span>
+              </div>
+            {:else if currentLocation}
+              <div class="gps-status active" title="Proyectos ordenados por cercanía">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
+                  <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z" fill="#10b981"/>
+                </svg>
+                <span>GPS activo</span>
+              </div>
+            {:else}
+              <div class="gps-status inactive">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
+                  <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z" fill="#9ca3af"/>
+                </svg>
+                <span>Sin GPS</span>
+                <button class="btn-retry" on:click={captureLocation}>Reintentar</button>
+              </div>
+            {/if}
+          </div>
+
           <button 
             class="btn-toggle-columns"
             on:click={() => showColumnSelector = !showColumnSelector}
@@ -223,7 +312,7 @@
             </svg>
             Columnas
           </button>
-          <span class="results-count">{filteredProyectos.length} proyecto(s)</span>
+          <span class="results-count">{sortedProyectos.length} proyecto(s)</span>
         </div>
       </div>
 
@@ -429,6 +518,66 @@
     display: flex;
     gap: 0.75rem;
     align-items: center;
+    flex-wrap: wrap;
+  }
+
+  /* GPS Indicator */
+  .gps-indicator {
+    display: flex;
+    align-items: center;
+  }
+
+  .gps-status {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem 0.75rem;
+    border-radius: 6px;
+    font-size: 0.875rem;
+    white-space: nowrap;
+  }
+
+  .gps-status.capturing {
+    background: #fef3c7;
+    color: #92400e;
+    border: 1px solid #fbbf24;
+  }
+
+  .gps-status.active {
+    background: #d1fae5;
+    color: #065f46;
+    border: 1px solid #10b981;
+  }
+
+  .gps-status.inactive {
+    background: #f3f4f6;
+    color: #6b7280;
+    border: 1px solid #d1d5db;
+  }
+
+  .spinner-small {
+    width: 14px;
+    height: 14px;
+    border: 2px solid #fbbf24;
+    border-top-color: transparent;
+    border-radius: 50%;
+    animation: spin 0.6s linear infinite;
+  }
+
+  .btn-retry {
+    padding: 0.125rem 0.5rem;
+    background: white;
+    border: 1px solid #d1d5db;
+    border-radius: 4px;
+    font-size: 0.75rem;
+    color: #4b5563;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+
+  .btn-retry:hover {
+    background: #f9fafb;
+    border-color: #9ca3af;
   }
 
   .btn-toggle-columns {
