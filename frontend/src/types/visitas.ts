@@ -12,12 +12,15 @@
 export interface UnidadProyecto {
   upid: number;
   nombre_up: string;
+  nombre_up_detalle?: string;
   tipo_equipamiento: string;
+  tipo_intervencion?: string;
   estado: string;
   avance_obra?: number | null;
+  presupuesto_base?: number | null;
   geometry?: {
-    type: string;
-    coordinates: [number, number]; // [lng, lat]
+    type: 'Point' | 'LineString' | 'MultiLineString' | 'Polygon' | string;
+    coordinates: string | [number, number] | [number, number][] | [number, number][][]; // Puede venir como string JSON
   } | null;
   // Campos adicionales que pueda retornar la API
   localidad?: string;

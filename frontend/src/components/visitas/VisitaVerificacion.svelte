@@ -60,6 +60,8 @@
   // Handlers para Step 1
   function handleUPSelect(up: UnidadProyecto) {
     visitaStore.selectUnidadProyecto(up);
+    // Avanzar automáticamente al siguiente paso después de seleccionar
+    visitaStore.nextStep();
   }
 
   async function handleLoadUPs() {

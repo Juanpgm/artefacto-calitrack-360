@@ -43,6 +43,50 @@
       comentario: esCorrecta ? undefined : comentario
     });
   }
+
+  function openGoogleMaps(geometry: UnidadProyecto['geometry']) {
+    if (!geometry || !geometry.coordinates) {
+      alert('Este proyecto no tiene coordenadas geográficas disponibles.');
+      return;
+    }
+
+    let lat: number, lng: number;
+
+    try {
+      // Parsear coordenadas si vienen como string
+      let coords = geometry.coordinates;
+      if (typeof coords === 'string') {
+        coords = JSON.parse(coords);
+      }
+
+      // Extraer coordenadas según el tipo de geometría
+      if (geometry.type === 'Point') {
+        [lng, lat] = coords as [number, number];
+      } else if (geometry.type === 'LineString') {
+        const lineCoords = coords as [number, number][];
+        [lng, lat] = lineCoords[0]; // Primer punto
+      } else if (geometry.type === 'MultiLineString') {
+        const firstLine = coords[0] as [number, number][];
+        [lng, lat] = firstLine[0]; // Primer punto de la primera línea
+      } else if (geometry.type === 'Polygon') {
+        const ring = coords[0] as [number, number][];
+        [lng, lat] = ring[0]; // Primer punto del polígono
+      } else {
+        throw new Error(`Tipo de geometría no soportado: ${geometry.type}`);
+      }
+
+      if (typeof lat !== 'number' || typeof lng !== 'number' || isNaN(lat) || isNaN(lng)) {
+        throw new Error('Coordenadas no válidas');
+      }
+      
+      const mapsUrl = `https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}`;
+      window.open(mapsUrl, '_blank');
+    } catch (error) {
+      const errorMsg = error instanceof Error ? error.message : String(error);
+      alert(`Error al abrir Google Maps: ${errorMsg}`);
+      console.error('Error procesando coordenadas:', { error: errorMsg, geometry });
+    }
+  }
 </script>
 
 <div class="step-container">
@@ -56,14 +100,49 @@
   <div class="step-content">
     <Card variant="elevated" padding="md">
       <div class="up-details">
-        <h3 class="up-name">{selectedUP.nombre_up}</h3>
+        <div class="header-with-map">
+          <h3 class="up-name">{selectedUP.upid} - {selectedUP.nombre_up}</h3>
+          {#if selectedUP.geometry && selectedUP.geometry.coordinates}
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => openGoogleMaps(selectedUP.geometry)}
+            >
+              📍 Ver en Maps
+            </Button>
+          {/if}
+        </div>
         
         <div class="details-grid">
+          <!-- UP ID -->
+          <div class="detail-item">
+            <span class="detail-label">UP ID</span>
+            <span class="detail-value code">{selectedUP.upid}</span>
+          </div>
+
+          <!-- Nombre UP Detalle -->
+          {#if selectedUP.nombre_up_detalle}
+            <div class="detail-item">
+              <span class="detail-label">Detalle UP</span>
+              <span class="detail-value">{selectedUP.nombre_up_detalle}</span>
+            </div>
+          {/if}
+
+          <!-- Tipo de Equipamiento -->
           <div class="detail-item">
             <span class="detail-label">Tipo de Equipamiento</span>
             <span class="detail-value">{selectedUP.tipo_equipamiento}</span>
           </div>
 
+          <!-- Tipo de Intervención -->
+          {#if selectedUP.tipo_intervencion}
+            <div class="detail-item">
+              <span class="detail-label">Tipo de Intervención</span>
+              <span class="detail-value">{selectedUP.tipo_intervencion}</span>
+            </div>
+          {/if}
+
+          <!-- Estado -->
           {#if selectedUP.estado}
             <div class="detail-item">
               <span class="detail-label">Estado</span>
@@ -71,8 +150,9 @@
             </div>
           {/if}
 
+          <!-- Avance de Obra -->
           {#if selectedUP.avance_obra !== null && selectedUP.avance_obra !== undefined}
-            <div class="detail-item">
+            <div class="detail-item full-width">
               <span class="detail-label">Avance de Obra</span>
               <div class="progress-container">
                 <div class="progress-bar">
@@ -83,6 +163,21 @@
             </div>
           {/if}
 
+          <!-- Presupuesto Base -->
+          {#if selectedUP.presupuesto_base !== null && selectedUP.presupuesto_base !== undefined}
+            <div class="detail-item">
+              <span class="detail-label">Presupuesto Base</span>
+              <span class="detail-value money">
+                {new Intl.NumberFormat('es-CO', {
+                  style: 'currency',
+                  currency: 'COP',
+                  minimumFractionDigits: 0
+                }).format(selectedUP.presupuesto_base)}
+              </span>
+            </div>
+          {/if}
+
+          <!-- Localidad -->
           {#if selectedUP.localidad}
             <div class="detail-item">
               <span class="detail-label">Localidad</span>
@@ -90,6 +185,7 @@
             </div>
           {/if}
 
+          <!-- Dirección -->
           {#if selectedUP.direccion}
             <div class="detail-item">
               <span class="detail-label">Dirección</span>
@@ -97,10 +193,19 @@
             </div>
           {/if}
 
+          <!-- Alcalde Local -->
           {#if selectedUP.alcalde_local}
             <div class="detail-item">
               <span class="detail-label">Alcalde Local</span>
               <span class="detail-value">{selectedUP.alcalde_local}</span>
+            </div>
+          {/if}
+
+          <!-- Geometría -->
+          {#if selectedUP.geometry}
+            <div class="detail-item">
+              <span class="detail-label">Tipo de Geometría</span>
+              <span class="detail-value code">{selectedUP.geometry.type}</span>
             </div>
           {/if}
         </div>
@@ -186,11 +291,20 @@
     gap: 1rem;
   }
 
+  .header-with-map {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 1rem;
+    flex-wrap: wrap;
+  }
+
   .up-name {
     font-size: 1.125rem;
     font-weight: 700;
     color: #4f46e5;
     margin: 0;
+    flex: 1;
   }
 
   .details-grid {
@@ -199,8 +313,8 @@
     gap: 1rem;
   }
   
-  /* Make full width on very small screens or for long content */
-  .detail-item:nth-child(odd):last-child {
+  /* Make full width items */
+  .detail-item.full-width {
     grid-column: span 2;
   }
 
@@ -233,6 +347,20 @@
     font-size: 0.75rem;
     font-weight: 600;
     width: fit-content;
+  }
+
+  .detail-value.code {
+    font-family: 'Courier New', monospace;
+    background: #f3f4f6;
+    padding: 0.25rem 0.5rem;
+    border-radius: 4px;
+    font-size: 0.875rem;
+    width: fit-content;
+  }
+
+  .detail-value.money {
+    color: #059669;
+    font-weight: 600;
   }
 
   .progress-container {
