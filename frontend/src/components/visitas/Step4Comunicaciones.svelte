@@ -1,6 +1,5 @@
 <script lang="ts">
   import { onMount } from 'svelte';
-  import Select from '../ui/Select.svelte';
   import Toggle from '../ui/Toggle.svelte';
   import Textarea from '../ui/Textarea.svelte';
   import Button from '../ui/Button.svelte';
@@ -17,6 +16,9 @@
   let selectedFiles: FileList | null = null;
   let photoPreviewUrls: string[] = [];
   
+  // Opciones del Estado 360
+  const estado360Options: Estado360[] = ['Antes', 'Durante', 'Después'];
+  
   // Debug: Log cambios en los valores
   $: {
     console.log('Step4 valores actualizados:', {
@@ -31,11 +33,9 @@
     console.log('Step4 montado - valores recibidos:', { estado360, viabilidadAlcalde, entregaPublica });
   });
 
-  $: estado360Options = [
-    { label: 'Antes', value: 'Antes' },
-    { label: 'Durante', value: 'Durante' },
-    { label: 'Después', value: 'Después' }
-  ];
+  function selectEstado360(value: Estado360) {
+    estado360 = value;
+  }
 
   function handleFileChange(event: Event) {
     const target = event.target as HTMLInputElement;
@@ -77,14 +77,35 @@
   </div>
 
   <div class="step-content">
-    <!-- Estado 360 -->
-    <Select
-      label="Estado 360"
-      bind:value={estado360}
-      options={estado360Options}
-      required={true}
-      hint="Estado inferido automáticamente"
-    />
+    <!-- Estado 360 con Botones -->
+    <div class="estado-360-section">
+      <label class="field-label">
+        Estado 360 <span class="required">*</span>
+      </label>
+      <p class="field-hint">Estado inferido automáticamente</p>
+      
+      <div class="estado-360-buttons">
+        {#each estado360Options as option}
+          <button
+            type="button"
+            class="estado-btn"
+            class:active={estado360 === option}
+            on:click={() => selectEstado360(option)}
+          >
+            <span class="estado-icon">
+              {#if option === 'Antes'}
+                🏗️
+              {:else if option === 'Durante'}
+                ⚙️
+              {:else}
+                ✅
+              {/if}
+            </span>
+            <span class="estado-text">{option}</span>
+          </button>
+        {/each}
+      </div>
+    </div>
 
     <!-- Toggles -->
     <Card variant="default" padding="sm">
@@ -178,6 +199,92 @@
     display: flex;
     flex-direction: column;
     gap: 1rem;
+  }
+
+  /* Estado 360 Buttons */
+  .estado-360-section {
+    margin-bottom: 0.5rem;
+  }
+
+  .field-label {
+    display: block;
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: #374151;
+    margin-bottom: 0.25rem;
+  }
+
+  .required {
+    color: #ef4444;
+    margin-left: 0.125rem;
+  }
+
+  .field-hint {
+    font-size: 0.75rem;
+    color: #6b7280;
+    margin: 0 0 0.75rem 0;
+  }
+
+  .estado-360-buttons {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 0.75rem;
+  }
+
+  .estado-btn {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    padding: 1.25rem 0.5rem;
+    border: 2px solid #e5e7eb;
+    border-radius: 12px;
+    background: white;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    -webkit-tap-highlight-color: transparent;
+    min-height: 100px;
+  }
+
+  .estado-btn:hover {
+    border-color: #667eea;
+    background: #f9fafb;
+  }
+
+  .estado-btn:active {
+    transform: scale(0.97);
+  }
+
+  .estado-btn.active {
+    border-color: #667eea;
+    background: linear-gradient(135deg, #667eea15 0%, #764ba215 100%);
+    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+  }
+
+  .estado-icon {
+    font-size: 2rem;
+    filter: grayscale(100%);
+    opacity: 0.6;
+    transition: all 0.2s ease;
+  }
+
+  .estado-btn.active .estado-icon {
+    filter: grayscale(0%);
+    opacity: 1;
+    transform: scale(1.1);
+  }
+
+  .estado-text {
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: #6b7280;
+    transition: color 0.2s ease;
+  }
+
+  .estado-btn.active .estado-text {
+    color: #667eea;
+    font-weight: 700;
   }
 
   .section-title {
@@ -282,5 +389,25 @@
     color: #6b7280;
     margin: 0;
     text-align: center;
+  }
+
+  /* Responsive para móviles pequeños */
+  @media (max-width: 400px) {
+    .estado-360-buttons {
+      gap: 0.5rem;
+    }
+
+    .estado-btn {
+      padding: 1rem 0.25rem;
+      min-height: 90px;
+    }
+
+    .estado-icon {
+      font-size: 1.75rem;
+    }
+
+    .estado-text {
+      font-size: 0.8125rem;
+    }
   }
 </style>
