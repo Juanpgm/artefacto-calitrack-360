@@ -289,7 +289,6 @@
         bind:entregaPublica={state.data.entrega_publica}
         bind:photosUrl={state.data.photos_url}
         bind:photoFiles={photoFiles}
-        inferEstado360={visitaStore.inferEstado360}
       />
     {/if}
 

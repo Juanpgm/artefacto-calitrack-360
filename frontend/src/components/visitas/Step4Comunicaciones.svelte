@@ -11,7 +11,6 @@
   export let entregaPublica: boolean | undefined;
   export let photosUrl: string[];
   export let photoFiles: File[] = []; // Nuevo prop para los archivos
-  export let inferEstado360: () => Estado360;
 
   let selectedFiles: FileList | null = null;
   let photoPreviewUrls: string[] = [];
