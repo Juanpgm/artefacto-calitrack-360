@@ -12,7 +12,8 @@
   let comentario = '';
   let error = '';
 
-  $: if (validacion) {
+  // Sincronizar con validacion prop solo en el montaje inicial
+  $: if (validacion && esCorrecta === null) {
     esCorrecta = validacion.esCorrecta;
     comentario = validacion.comentario || '';
   }
@@ -24,6 +25,17 @@
     if (isCorrect) {
       comentario = '';
       onValidate({ esCorrecta: true });
+    }
+  }
+
+  // Validar cuando el usuario escribe en el comentario
+  function handleComentarioChange() {
+    if (esCorrecta === false && comentario.trim()) {
+      error = '';
+      onValidate({
+        esCorrecta: false,
+        comentario: comentario.trim()
+      });
     }
   }
 
@@ -246,6 +258,7 @@
           required={true}
           maxLength={500}
           hint="Especifique qué datos están desactualizados"
+          on:input={handleComentarioChange}
         />
       </div>
     {/if}

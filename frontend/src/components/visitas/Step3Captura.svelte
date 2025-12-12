@@ -20,6 +20,8 @@
   export let onRemoveEntorno: (id: string) => void;
   export let onUpdateEntorno: (id: string, updates: Partial<UPEntorno>) => void;
   export let isLoading: boolean;
+  export let onDescripcionChange: (() => void) | undefined = undefined;
+  export let onUpdateDescripcion: ((field: string, value: string) => void) | undefined = undefined;
 
   let gpsError = '';
   let nuevoCentroGestor = '';
@@ -27,6 +29,26 @@
   let autoCaptureAttempted = false;
   let distanceToProject: number | null = null;
   let showDistanceWarning = false;
+
+  // Variables locales para manejar el input
+  let localIntervencion = descripcionIntervencion || '';
+  let localSolicitud = descripcionSolicitud || '';
+
+  // Sincronizar cuando cambian las props
+  $: localIntervencion = descripcionIntervencion || '';
+  $: localSolicitud = descripcionSolicitud || '';
+
+  function handleIntervencionChange(e: Event) {
+    const target = e.target as HTMLTextAreaElement;
+    localIntervencion = target.value;
+    onUpdateDescripcion?.('descripcion_intervencion', localIntervencion);
+  }
+
+  function handleSolicitudChange(e: Event) {
+    const target = e.target as HTMLTextAreaElement;
+    localSolicitud = target.value;
+    onUpdateDescripcion?.('descripcion_solicitud', localSolicitud);
+  }
 
   // Recalcular distancia cuando cambien las coordenadas
   $: if (coordenadas && selectedUP?.geometry) {
@@ -154,20 +176,22 @@
     <!-- Descripciones -->
     <Textarea
       label="Descripción de la Intervención"
-      bind:value={descripcionIntervencion}
+      value={localIntervencion}
       placeholder="Describa las actividades realizadas..."
       rows={3}
       required={true}
       maxLength={1000}
+      on:input={handleIntervencionChange}
     />
 
     <Textarea
       label="Descripción de la Solicitud"
-      bind:value={descripcionSolicitud}
+      value={localSolicitud}
       placeholder="Describa las solicitudes..."
       rows={3}
       required={true}
       maxLength={1000}
+      on:input={handleSolicitudChange}
     />
 
     <!-- UP Entorno -->

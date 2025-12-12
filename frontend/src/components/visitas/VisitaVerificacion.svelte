@@ -35,8 +35,19 @@
   $: canContinue = $isCurrentStepValid;
   $: currentStep = state.currentStep;
   
-  // Debug: Log validation state
-  $: {
+  // Debug: Log validation state para paso 3
+  $: if (currentStep === 3) {
+    console.log('Estado paso 3:', {
+      coordenadas_gps: state.data.coordenadas_gps,
+      descripcion_intervencion: state.data.descripcion_intervencion,
+      descripcion_solicitud: state.data.descripcion_solicitud,
+      up_entorno: state.data.up_entorno,
+      canContinue
+    });
+  }
+  
+  // Debug: Log validation state para paso 4
+  $: if (currentStep === 4) {
     console.log('Estado paso 4:', {
       currentStep,
       estado_360: state.data.estado_360,
@@ -80,6 +91,10 @@
 
   async function handleLoadCentros() {
     await visitaStore.loadCentrosGestores();
+  }
+
+  function handleUpdateDescripcion(field: string, value: string) {
+    visitaStore.updateData({ [field]: value });
   }
 
   // Navegación
@@ -269,8 +284,8 @@
     {:else if currentStep === 3}
       <Step3Captura
         coordenadas={state.data.coordenadas_gps}
-        bind:descripcionIntervencion={state.data.descripcion_intervencion}
-        bind:descripcionSolicitud={state.data.descripcion_solicitud}
+        descripcionIntervencion={state.data.descripcion_intervencion || ''}
+        descripcionSolicitud={state.data.descripcion_solicitud || ''}
         bind:upEntorno={state.data.up_entorno}
         centrosGestores={state.centrosGestores}
         selectedUP={state.selectedUP}
@@ -280,6 +295,7 @@
         onRemoveEntorno={visitaStore.removeUPEntorno}
         onUpdateEntorno={visitaStore.updateUPEntorno}
         isLoading={state.isLoading}
+        onUpdateDescripcion={handleUpdateDescripcion}
       />
     
     {:else if currentStep === 4}

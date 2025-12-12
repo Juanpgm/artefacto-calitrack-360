@@ -23,6 +23,8 @@ const initialState: FormularioState = {
   completedSteps: new Set<StepNumber>(),
   data: {
     tipo_visita: 'verificacion',
+    descripcion_intervencion: '',
+    descripcion_solicitud: '',
     up_entorno: [],
     photos_url: [],
     fecha_registro: new Date().toISOString(),
@@ -53,9 +55,13 @@ function createVisitaStore() {
         ...initialState,
         data: {
           tipo_visita: 'verificacion',
+          descripcion_intervencion: '',
+          descripcion_solicitud: '',
           up_entorno: [],
           photos_url: [],
-          fecha_registro: new Date().toISOString()
+          fecha_registro: new Date().toISOString(),
+          viabilidad_alcalde: false,
+          entrega_publica: false
         },
         completedSteps: new Set<StepNumber>()
       });
@@ -343,9 +349,18 @@ export const isCurrentStepValid = derived(
                (data.validacion.esCorrecta || !!data.validacion.comentario);
       
       case 3:
-        return !!data.coordenadas_gps &&
-               !!data.descripcion_intervencion &&
-               !!data.descripcion_solicitud;
+        const hasGPS = !!data.coordenadas_gps;
+        const hasIntervencion = !!data.descripcion_intervencion?.trim();
+        const hasSolicitud = !!data.descripcion_solicitud?.trim();
+        console.log('Validación Step 3:', { 
+          hasGPS, 
+          hasIntervencion, 
+          hasSolicitud,
+          gps: data.coordenadas_gps,
+          intervencion: data.descripcion_intervencion,
+          solicitud: data.descripcion_solicitud
+        });
+        return hasGPS && hasIntervencion && hasSolicitud;
       
       case 4:
         // Validar que estado_360 esté definido y que los toggles tengan valor booleano

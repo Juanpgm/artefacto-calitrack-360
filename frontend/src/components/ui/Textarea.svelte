@@ -35,6 +35,9 @@
     {required}
     maxlength={maxLength}
     bind:value
+    on:input
+    on:change
+    on:blur
   />
 
   {#if hint && !error}
