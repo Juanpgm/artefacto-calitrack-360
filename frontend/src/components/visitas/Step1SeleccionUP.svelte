@@ -34,6 +34,7 @@
     { key: 'upid', label: 'UP ID', visible: true, width: '80px' },
     { key: 'nombre_up', label: 'Nombre UP', visible: true, width: '200px' },
     { key: 'nombre_up_detalle', label: 'Detalle UP', visible: true, width: '200px' },
+    { key: 'direccion', label: 'Dirección', visible: true, width: '180px' },
     { key: 'tipo_equipamiento', label: 'Tipo Equipamiento', visible: false, width: '150px' },
     { key: 'tipo_intervencion', label: 'Tipo Intervención', visible: false, width: '150px' },
     { key: 'estado', label: 'Estado', visible: false, width: '100px' },
@@ -51,6 +52,7 @@
       up.upid.toString().includes(term) ||
       up.nombre_up?.toLowerCase().includes(term) ||
       up.nombre_up_detalle?.toLowerCase().includes(term) ||
+      up.direccion?.toLowerCase().includes(term) ||
       up.tipo_equipamiento?.toLowerCase().includes(term) ||
       up.tipo_intervencion?.toLowerCase().includes(term) ||
       up.estado?.toLowerCase().includes(term)
@@ -272,7 +274,7 @@
       <div class="toolbar">
         <input
           type="text"
-          placeholder="Buscar por nombre, tipo, estado..."
+          placeholder="Buscar por nombre, dirección, tipo, estado..."
           bind:value={searchTerm}
           class="search-input"
         />

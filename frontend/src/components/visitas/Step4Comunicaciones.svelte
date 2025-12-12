@@ -133,7 +133,6 @@
             type="file"
             accept="image/*"
             multiple
-            capture="environment"
             on:change={handleFileChange}
             id="photo-input"
             class="file-input"
@@ -141,7 +140,7 @@
           <label for="photo-input" class="file-label">
             <span class="file-icon">📷</span>
             <span class="file-text">
-              {photoFiles.length > 0 ? `${photoFiles.length} foto(s)` : 'Tomar fotos'}
+              {photoFiles.length > 0 ? `${photoFiles.length} foto(s) seleccionada(s)` : 'Agregar fotos'}
             </span>
           </label>
         </div>
@@ -164,7 +163,7 @@
         {/if}
 
         <p class="photos-hint">
-          Tome fotos claras del estado actual
+          Tome fotos con la cámara o seleccione desde su galería
         </p>
       </div>
     </Card>
@@ -329,6 +328,10 @@
     transition: all 0.2s ease;
     font-weight: 600;
     -webkit-tap-highlight-color: transparent;
+  }
+
+  .file-label:hover {
+    background: #4338ca;
   }
 
   .file-label:active {
