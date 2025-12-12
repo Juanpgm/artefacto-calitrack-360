@@ -128,23 +128,45 @@
       <div class="photos-section">
         <h4 class="section-title">📸 Evidencia Fotográfica</h4>
         
-        <div class="file-input-wrapper">
-          <input
-            type="file"
-            accept="image/*"
-            multiple
-            capture="environment"
-            on:change={handleFileChange}
-            id="photo-input"
-            class="file-input"
-          />
-          <label for="photo-input" class="file-label">
-            <span class="file-icon">📷</span>
-            <span class="file-text">
-              {photoFiles.length > 0 ? `${photoFiles.length} foto(s) seleccionada(s)` : 'Agregar fotos'}
-            </span>
-          </label>
+        <div class="photo-buttons-container">
+          <!-- Botón de Cámara (más grande) -->
+          <div class="file-input-wrapper camera-wrapper">
+            <input
+              type="file"
+              accept="image/*"
+              multiple
+              capture="environment"
+              on:change={handleFileChange}
+              id="camera-input"
+              class="file-input"
+            />
+            <label for="camera-input" class="file-label camera-label">
+              <span class="file-icon">📷</span>
+              <span class="file-text">Tomar foto</span>
+            </label>
+          </div>
+
+          <!-- Botón de Galería (más pequeño) -->
+          <div class="file-input-wrapper gallery-wrapper">
+            <input
+              type="file"
+              accept="image/*"
+              multiple
+              on:change={handleFileChange}
+              id="gallery-input"
+              class="file-input"
+            />
+            <label for="gallery-input" class="file-label gallery-label">
+              <span class="file-icon-small">🖼️</span>
+            </label>
+          </div>
         </div>
+
+        {#if photoFiles.length > 0}
+          <div class="selected-count">
+            {photoFiles.length} foto{photoFiles.length > 1 ? 's' : ''} seleccionada{photoFiles.length > 1 ? 's' : ''}
+          </div>
+        {/if}
 
         {#if photoPreviewUrls.length > 0}
           <div class="photo-previews">
@@ -305,6 +327,19 @@
     gap: 0.75rem;
   }
 
+  .photo-buttons-container {
+    display: flex;
+    gap: 0.5rem;
+  }
+
+  .camera-wrapper {
+    flex: 1;
+  }
+
+  .gallery-wrapper {
+    flex-shrink: 0;
+  }
+
   .file-input-wrapper {
     position: relative;
   }
@@ -322,8 +357,6 @@
     justify-content: center;
     gap: 0.5rem;
     padding: 0.75rem;
-    background: #4f46e5;
-    color: white;
     border-radius: 8px;
     cursor: pointer;
     transition: all 0.2s ease;
@@ -331,20 +364,50 @@
     -webkit-tap-highlight-color: transparent;
   }
 
-  .file-label:hover {
+  .file-label:active {
+    transform: scale(0.98);
+  }
+
+  .camera-label {
+    background: #4f46e5;
+    color: white;
+  }
+
+  .camera-label:hover {
     background: #4338ca;
   }
 
-  .file-label:active {
-    transform: scale(0.98);
+  .gallery-label {
+    background: #10b981;
+    color: white;
+    padding: 0.75rem 1rem;
+    min-width: 50px;
+  }
+
+  .gallery-label:hover {
+    background: #059669;
   }
 
   .file-icon {
     font-size: 1.25rem;
   }
 
+  .file-icon-small {
+    font-size: 1.25rem;
+  }
+
   .file-text {
     font-size: 0.875rem;
+  }
+
+  .selected-count {
+    text-align: center;
+    font-size: 0.875rem;
+    color: #4f46e5;
+    font-weight: 600;
+    padding: 0.5rem;
+    background: #eef2ff;
+    border-radius: 6px;
   }
 
   .photo-previews {
