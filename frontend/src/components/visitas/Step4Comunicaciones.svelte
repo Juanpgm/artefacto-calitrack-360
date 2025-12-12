@@ -133,6 +133,7 @@
             type="file"
             accept="image/*"
             multiple
+            capture="environment"
             on:change={handleFileChange}
             id="photo-input"
             class="file-input"
