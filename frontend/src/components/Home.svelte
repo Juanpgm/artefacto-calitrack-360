@@ -2,9 +2,11 @@
   import { authStore } from "../stores/authStore";
   import VisitaVerificacion from "./visitas/VisitaVerificacion.svelte";
   import HistorialVisitas from "./visitas/HistorialVisitas.svelte";
+  import ReporteIntervencion from "./grupoCuadrilla/ReporteIntervencion.svelte";
 
   let showVisitas = false;
   let showHistorial = false;
+  let showReporteIntervencion = false;
 
   const handleLogout = async () => {
     await authStore.logout();
@@ -13,11 +15,19 @@
   function openVisitas() {
     showVisitas = true;
     showHistorial = false;
+    showReporteIntervencion = false;
   }
 
   function openHistorial() {
     showHistorial = true;
     showVisitas = false;
+    showReporteIntervencion = false;
+  }
+
+  function openReporteIntervencion() {
+    showReporteIntervencion = true;
+    showVisitas = false;
+    showHistorial = false;
   }
 
   function closeVisitas() {
@@ -27,12 +37,18 @@
   function closeHistorial() {
     showHistorial = false;
   }
+
+  function closeReporteIntervencion() {
+    showReporteIntervencion = false;
+  }
 </script>
 
 {#if showVisitas}
   <VisitaVerificacion onClose={closeVisitas} />
 {:else if showHistorial}
   <HistorialVisitas onClose={closeHistorial} />
+{:else if showReporteIntervencion}
+  <ReporteIntervencion onClose={closeReporteIntervencion} />
 {:else}
   <div class="home-container">
     <header class="header">
@@ -89,10 +105,10 @@
             <p class="action-description">Ver visitas registradas</p>
           </button>
 
-          <button class="action-card" disabled>
-            <div class="action-icon">📸</div>
-            <h3 class="action-title">Capturas</h3>
-            <p class="action-description">Próximamente</p>
+          <button class="action-card" on:click={openReporteIntervencion}>
+            <div class="action-icon">🌳</div>
+            <h3 class="action-title">Reporte Intervención</h3>
+            <p class="action-description">Registrar árboles intervenidos</p>
           </button>
 
           <button class="action-card" disabled>
